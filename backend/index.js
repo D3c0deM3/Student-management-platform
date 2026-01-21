@@ -7,9 +7,23 @@ initDb()
 const app = express()
 const port = process.env.PORT || 3001
 
+const allowedOrigins = (
+  process.env.CORS_ORIGIN ||
+  'http://localhost:9000,https://student-management-platform-onjsoqxag.vercel.app'
+)
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
 app.use(
   cors({
-    origin: 'http://localhost:9000',
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+        return
+      }
+      callback(new Error(`CORS blocked: ${origin}`))
+    },
     credentials: true,
   })
 )
