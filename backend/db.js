@@ -221,7 +221,7 @@ function seedAdmin() {
 function seedSampleData() {
   const minTeachers = 8
   const minCourses = 10
-  const minStudents = 36
+  const minStudents = 120
   const minEnrollments = 60
   const minAttendance = 120
 
@@ -515,6 +515,7 @@ function seedSampleData() {
     }
 
     if (studentIds.length && courseRows.length) {
+      const teacherIdSet = new Set(teacherIds)
       const enrollmentPairs = new Set(
         db
           .prepare('SELECT student_id, course_id FROM enrollments')
@@ -565,7 +566,10 @@ function seedSampleData() {
           const fallbackTeacherId = teacherIds.length
             ? teacherIds[(sIndex + cIndex) % teacherIds.length]
             : null
-          const teacherId = course.teacher_id || fallbackTeacherId
+          const courseTeacherId = teacherIdSet.has(course.teacher_id)
+            ? course.teacher_id
+            : null
+          const teacherId = courseTeacherId || fallbackTeacherId
           insertEnrollment.run(
             studentId,
             course.id,
@@ -667,6 +671,9 @@ function initDb() {
     if (!columnExists('enrollments', 'status')) {
       db.exec("ALTER TABLE enrollments ADD COLUMN status TEXT DEFAULT 'active'")
       db.exec("UPDATE enrollments SET status = 'active' WHERE status IS NULL")
+    }
+    if (!columnExists('enrollments', 'grade')) {
+      db.exec('ALTER TABLE enrollments ADD COLUMN grade TEXT')
     }
   }
 

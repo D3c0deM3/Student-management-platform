@@ -386,6 +386,69 @@ app.get('/api/courses', (req, res) => {
   res.json({ data: rows, total, page, limit })
 })
 
+app.get('/api/courses/:id/enrollments', (req, res) => {
+  const courseId = Number(req.params.id)
+  const courseExists = db.prepare('SELECT id FROM courses WHERE id = ?').get(courseId)
+
+  if (!courseExists) {
+    res.status(404).json({ error: 'Course not found.' })
+    return
+  }
+
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        e.id,
+        e.student_id,
+        e.course_id,
+        e.status,
+        e.grade,
+        e.start_date,
+        s.full_name AS student_name,
+        s.email AS student_email
+      FROM enrollments e
+      JOIN students s ON s.id = e.student_id
+      WHERE e.course_id = ?
+      ORDER BY s.full_name COLLATE NOCASE ASC
+    `
+    )
+    .all(courseId)
+
+  res.json({ data: rows })
+})
+
+app.get('/api/courses/:id/attendance', (req, res) => {
+  const courseId = Number(req.params.id)
+  const date =
+    String(req.query.date || '').trim() || new Date().toISOString().slice(0, 10)
+
+  const courseExists = db.prepare('SELECT id FROM courses WHERE id = ?').get(courseId)
+  if (!courseExists) {
+    res.status(404).json({ error: 'Course not found.' })
+    return
+  }
+
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        a.id,
+        a.student_id,
+        a.course_id,
+        a.attendance_date,
+        a.status,
+        s.full_name AS student_name
+      FROM attendance_records a
+      JOIN students s ON s.id = a.student_id
+      WHERE a.course_id = ? AND a.attendance_date = ?
+    `
+    )
+    .all(courseId, date)
+
+  res.json({ data: rows, date })
+})
+
 app.get('/api/courses/:id', (req, res) => {
   const course = db
     .prepare(
@@ -669,6 +732,7 @@ app.post('/api/enroll', (req, res) => {
     ['active', 'completed', 'dropped'],
     'active'
   )
+  const grade = String(req.body?.grade || '').trim() || null
 
   if (!studentId || !courseId) {
     res.status(400).json({ error: 'Student and course are required.' })
@@ -689,11 +753,11 @@ app.post('/api/enroll', (req, res) => {
     const result = db
       .prepare(
         `
-        INSERT INTO enrollments (student_id, course_id, teacher_id, start_date, status)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO enrollments (student_id, course_id, teacher_id, start_date, status, grade)
+        VALUES (?, ?, ?, ?, ?, ?)
       `
       )
-      .run(studentId, courseId, teacherId, startDate, status)
+      .run(studentId, courseId, teacherId, startDate, status, grade)
     res.status(201).json({ id: result.lastInsertRowid })
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -702,6 +766,28 @@ app.post('/api/enroll', (req, res) => {
     }
     res.status(500).json({ error: 'Unable to add enrollment.' })
   }
+})
+
+app.put('/api/enroll/:id', (req, res) => {
+  const gradeInput = String(req.body?.grade || '').trim()
+  const grade = gradeInput || null
+
+  const result = db
+    .prepare(
+      `
+      UPDATE enrollments
+      SET grade = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `
+    )
+    .run(grade, req.params.id)
+
+  if (result.changes === 0) {
+    res.status(404).json({ error: 'Enrollment not found.' })
+    return
+  }
+
+  res.json({ success: true })
 })
 
 app.get('/api/students/:id/enrollments', (req, res) => {
@@ -725,6 +811,7 @@ app.get('/api/students/:id/enrollments', (req, res) => {
         e.teacher_id,
         e.start_date,
         e.status,
+        e.grade,
         e.created_at,
         c.name AS course_name,
         t.full_name AS teacher_name
@@ -837,6 +924,32 @@ app.post('/api/attendance', (req, res) => {
     }
     res.status(500).json({ error: 'Unable to record attendance.' })
   }
+})
+
+app.put('/api/attendance/:id', (req, res) => {
+  const status = normalizeStatus(
+    req.body?.status,
+    ['present', 'absent', 'late', 'excused'],
+    'present'
+  )
+  const notes = String(req.body?.notes || '').trim() || null
+
+  const result = db
+    .prepare(
+      `
+      UPDATE attendance_records
+      SET status = ?, notes = ?
+      WHERE id = ?
+    `
+    )
+    .run(status, notes, req.params.id)
+
+  if (result.changes === 0) {
+    res.status(404).json({ error: 'Attendance record not found.' })
+    return
+  }
+
+  res.json({ success: true })
 })
 
 app.delete('/api/attendance/:id', (req, res) => {

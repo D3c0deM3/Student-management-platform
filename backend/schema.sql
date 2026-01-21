@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS enrollments (
   teacher_id INTEGER,
   start_date TEXT,
   status TEXT NOT NULL DEFAULT 'active',
+  grade TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (student_id, course_id),
