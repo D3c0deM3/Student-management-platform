@@ -1,0 +1,17 @@
+// app global css in SCSS form
+:root {
+  --app-chrome-gradient: linear-gradient(135deg, #111827, #1e293b);
+  --app-accent: #38bdf8;
+}
+
+:root[data-theme='slate'] {
+  --app-chrome-gradient: linear-gradient(135deg, #111827, #1e293b);
+}
+
+:root[data-theme='graphite'] {
+  --app-chrome-gradient: linear-gradient(135deg, #0f172a, #1f2937);
+}
+
+:root[data-theme='cloud'] {
+  --app-chrome-gradient: linear-gradient(135deg, #1f2937, #334155);
+}
