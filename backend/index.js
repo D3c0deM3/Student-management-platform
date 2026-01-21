@@ -5,7 +5,8 @@ const { db, initDb, verifyPassword, createSession } = require('./db')
 initDb()
 
 const app = express()
-const port = process.env.PORT || 3001
+const port = process.env.PORT || 8080
+const host = process.env.HOST || '0.0.0.0'
 
 const allowedOrigins = (
   process.env.CORS_ORIGIN ||
@@ -990,7 +991,7 @@ app.delete('/api/enroll/:id', (req, res) => {
   res.json({ success: true })
 })
 
-app.listen(port, () => {
+app.listen(port, host, () => {
   // eslint-disable-next-line no-console
-  console.log(`API listening on http://localhost:${port}`)
+  console.log(`API listening on http://${host}:${port}`)
 })
