@@ -10,7 +10,7 @@ const host = process.env.HOST || '0.0.0.0'
 
 const allowedOrigins = (
   process.env.CORS_ORIGIN ||
-  'http://localhost:9000,https://student-management-platform-onjsoqxag.vercel.app,https://student-management-platform.fly.dev'
+  'http://localhost:9000,https://student-management-platform-onjsoqxag.vercel.app,https://student-management-platform.fly.dev,https://student-management-plat-git-b56327-shokhrukhs-projects-c8440fd8.vercel.app'
 )
   .split(',')
   .map((origin) => origin.trim())
