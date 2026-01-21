@@ -8,8 +8,10 @@ import axios from 'axios'
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
+const defaultBaseUrl = 'https://student-management-platform.fly.dev/api'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || defaultBaseUrl,
 })
 
 api.interceptors.request.use((config) => {
